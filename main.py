@@ -57,7 +57,7 @@ class INNMApp(App):
         self.folders = store.get("folders", [])
         self.taskboxes_ui = store.get("taskboxes_ui", [])
         self.root = Builder.load_file("ui.kv")
-        self._render_lists()
+        Clock.schedule_once(lambda dt: self._render_lists(), 0)
         return self.root
 
     # ════════════════════════════════════════════════
@@ -247,3 +247,4 @@ class INNMApp(App):
 
 if __name__ == "__main__":
     INNMApp().run()
+
