@@ -1,0 +1,78 @@
+# ZQ Feedback → Enhancement Branch Pipeline
+# Copyright © 2026 ZQ AI LOGIC™ — Apache License 2.0
+#
+# TRIGGER: Fires every time a GitHub Issue with label 'feedback' is opened.
+# ACTION:  Creates an enhancement/zq-issue-XX branch + comments the link back.
+
+name: ZQ Feedback → Enhancement Branch
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  create-enhancement-branch:
+    name: Forge Enhancement Workbranch
+    runs-on: ubuntu-latest
+
+    # Only fire when the 'feedback' label is present
+    if: contains(toJson(github.event.issue.labels), 'feedback')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set branch name
+        id: branch_name
+        run: |
+          ISSUE_NUM="${{ github.event.issue.number }}"
+          SAFE_TITLE=$(echo "${{ github.event.issue.title }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | cut -c1-40)
+          BRANCH="enhancement/zq-issue-${ISSUE_NUM}-${SAFE_TITLE}"
+          echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
+          echo "issue_num=${ISSUE_NUM}" >> $GITHUB_OUTPUT
+
+      - name: Create and push enhancement branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="${{ steps.branch_name.outputs.branch }}"
+          git config user.name  "ZQ-Feedback-Bot"
+          git config user.email "feedback-bot@zqailogic.com"
+          git checkout -b "$BRANCH"
+
+          # Stamp a version note file into the new branch
+          mkdir -p .zq_enhancements
+          cat > .zq_enhancements/issue-${{ steps.branch_name.outputs.issue_num }}.md << 'MARKER'
+          # ZQ Enhancement Note
+          - Issue: #${{ github.event.issue.number }}
+          - Title: ${{ github.event.issue.title }}
+          - Created: $(date -u +"%Y-%m-%d %H:%M UTC")
+          - Branch: ${{ steps.branch_name.outputs.branch }}
+          - Status: OPEN — Ready for version upgrade work
+          MARKER
+
+          git add .zq_enhancements/
+          git commit -m "chore: initialize enhancement branch for issue #${{ steps.branch_name.outputs.issue_num }}"
+          git push origin "$BRANCH"
+
+      - name: Comment on Issue with branch link
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUM="${{ steps.branch_name.outputs.issue_num }}"
+          BRANCH="${{ steps.branch_name.outputs.branch }}"
+          REPO="${{ github.repository }}"
+          gh issue comment "$ISSUE_NUM" \
+            --body "## ZQ Enhancement Workbranch Created
+
+**Branch:** \`${BRANCH}\`
+**Repo:** [${REPO}](https://github.com/${REPO}/tree/${BRANCH})
+
+> This branch was automatically forged by the ZQ Feedback Pipeline.
+> Ready for version enhancement commits."
