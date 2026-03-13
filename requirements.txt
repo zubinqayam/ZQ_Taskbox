@@ -1,4 +1,18 @@
+# ── Core runtime ────────────────────────────────────────────────
 kivy>=2.3.0
 pandas>=2.0.0
 openpyxl>=3.1.0
 requests>=2.28.0
+
+# ── Kivy Windows dependencies (prebuilt wheels) ──────────────────
+# Install order matters: run  pip install kivy[base]  on Windows
+# or install these explicitly before kivy:
+#   pip install kivy_deps.sdl2 kivy_deps.glew
+# They are listed here for documentation; pip install -r requirements.txt
+# will skip them if already satisfied via kivy[base] extras.
+kivy_deps.sdl2>=0.4.0; sys_platform == "win32"
+kivy_deps.glew>=0.3.0; sys_platform == "win32"
+
+# ── Packaging tools (not needed at runtime, only for build) ──────
+# pyinstaller>=6.0.0   # uncomment when building .exe
+# buildozer>=1.5.0     # uncomment when building .apk (Linux/WSL only)

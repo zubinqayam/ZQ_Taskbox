@@ -52,6 +52,7 @@ class DraggableToolItem(DragBehavior, Button):
 
 
 class INNMApp(App):
+
     def build(self):
         self.title = "INNM Taskbox"
         api_key = store.get("innm_api_key", "")
@@ -65,6 +66,7 @@ class INNMApp(App):
 
         # Defer list rendering until after the widget tree is fully attached
         Clock.schedule_once(lambda dt: self._render_lists(), 0)
+
         return root  # <-- Kivy sets self.root from this return value
 
     # ================================================
@@ -196,9 +198,9 @@ class INNMApp(App):
 
     def _prompt_name(self, title, callback):
         content = BoxLayout(orientation="vertical", spacing=5, padding=5)
-        ti      = TextInput(multiline=False)
-        btns    = BoxLayout(size_hint_y=None, height=40, spacing=5)
-        popup   = Popup(title=title, content=content, size_hint=(0.6, 0.3))
+        ti = TextInput(multiline=False)
+        btns = BoxLayout(size_hint_y=None, height=40, spacing=5)
+        popup = Popup(title=title, content=content, size_hint=(0.6, 0.3))
         ok_btn     = Button(text="OK")
         cancel_btn = Button(text="Cancel")
 
