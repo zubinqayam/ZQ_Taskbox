@@ -223,13 +223,6 @@ Return a STRICTLY VALID JSON object matching this schema:
                 f"provenance_id={envelope['provenance_id'][:16]}..."
             )
 
-        if decision.action == "suspend_block":
-            return (
-                "Blocked by Top Matrix governance. "
-                f"Trust grade={decision.grade}, score={decision.score:.2f}, "
-                f"provenance_id={envelope['provenance_id'][:16]}..."
-            )
-
         try:
             intent = self.parse_intent(normalized["payload"])
             result = self.handle_intent(intent)
