@@ -124,10 +124,13 @@ class INNMApp(App):
             disp = self.root.ids.feedback_history_display
             prefix = "ZQ"
         disp.text += f"\n\nYou: {text}"
-        disp.text += f"\n{prefix}: ⏳ Thinking..."
+        placeholder_token = uuid.uuid4().hex
+        placeholder = f"\n{prefix}: ⏳ Thinking... [{placeholder_token}]"
+        disp.text += placeholder
 
         def on_innm_reply(reply, error):
-            disp.text = disp.text.replace(f"\n{prefix}: ⏳ Thinking...", "")
+            # Remove only this request's placeholder instance
+            disp.text = disp.text.replace(placeholder, "", 1)
             if error:
                 msg = f"⚠️ Error: {str(error)}"
             else:
