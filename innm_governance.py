@@ -145,7 +145,7 @@ class INNMGovernance:
             return {}
         try:
             return json.loads(self.error_index_path.read_text(encoding="utf-8"))
-        except Exception:
+        except json.JSONDecodeError:
             return {}
 
     def _save_error_index(self, data: Dict[str, Any]) -> None:
