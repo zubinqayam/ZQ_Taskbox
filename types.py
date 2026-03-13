@@ -12,7 +12,17 @@
 types.py — DEPRECATED shim. Import from zq_types instead.
 Kept for backward compatibility only.
 """
-# Re-export everything from zq_types so legacy imports keep working
-from zq_types import UserRole, TaskType, SourceType, FeedbackSeverity
 
-__all__ = ["UserRole", "TaskType", "SourceType", "FeedbackSeverity"]
+# Use lazy import via __getattr__ to avoid shadowing stdlib 'types' module
+# during PyInstaller bundling (circular import guard).
+
+_public = ["UserRole", "TaskType", "SourceType", "FeedbackSeverity"]
+__all__ = _public
+
+
+def __getattr__(name):
+    if name in _public:
+        import importlib
+        _zq = importlib.import_module("zq_types")
+        return getattr(_zq, name)
+    raise AttributeError(f"module 'types' (shim) has no attribute {name!r}")
