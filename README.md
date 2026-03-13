@@ -83,14 +83,60 @@ Notes:
 
 ## Packaging
 
-**Android:**
+**Windows EXE (local):**
 
-```bash
-pip install buildozer
-buildozer android debug
+```powershell
+./scripts/build_exe.ps1
 ```
 
-**Windows:**
+Output:
+
+- `dist/INNM_Taskbox.exe`
+
+**Android APK (local, sideload):**
+
+```powershell
+./scripts/build_apk.ps1
+```
+
+This runs Buildozer in WSL and produces an APK under `bin/`.
+
+**Android signed release APK (recommended for sharing):**
+
+1. Create signing keystore once:
+
+```powershell
+./scripts/create_apk_keystore.ps1
+```
+
+1. In your WSL shell, set signing env vars:
+
+```bash
+export APK_KEYSTORE_PASSWORD="your_keystore_password"
+export APK_KEY_PASSWORD="your_key_password"
+```
+
+1. Build signed release APK:
+
+```powershell
+./scripts/build_apk_release.ps1
+```
+
+Output:
+
+- `bin/*-release-signed.apk`
+
+**Android (direct Linux/WSL):**
+
+```bash
+./scripts/build_apk_wsl.sh
+```
+
+**CI artifacts:**
+
+Run GitHub Action `Build EXE and APK` to get downloadable `.exe` and `.apk` artifacts.
+
+**Manual fallback commands:**
 
 ```powershell
 python -m PyInstaller --onefile --windowed --name INNM_Taskbox --add-data "ui.kv;." main.py

@@ -11,10 +11,13 @@ requirements = python3,kivy,pandas,openpyxl,requests
 orientation = portrait
 fullscreen = 0
 
+android.minapi = 23
 android.api = 34
 android.sdk = 34
 android.ndk_api = 21
 android.archs = arm64-v8a, armeabi-v7a
+android.release_artifact = apk
+android.accept_sdk_license = True
 
 android.permissions = INTERNET, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
 
