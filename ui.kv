@@ -2,7 +2,6 @@
 
 #:import dp kivy.metrics.dp
 #:import DragBehavior kivy.uix.behaviors.drag.DragBehavior
-#:import Animation kivy.animation.Animation
 
 <ZQBubble@DragBehavior+Button>:
     size_hint: None, None
@@ -165,7 +164,7 @@
     BoxLayout:
         id: feedback_drawer
         orientation: "vertical"
-        size_hint: 0.33, 1
+        size_hint: (0.33 if app.drawer_open else 0.5), 1
         pos_hint: {"right": 1.5, "top": 1}
         padding: dp(8)
         spacing: dp(6)

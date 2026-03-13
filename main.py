@@ -19,6 +19,7 @@ Layout:
 
 Run: python main.py
 """
+import copy
 import uuid
 import threading
 from pathlib import Path
@@ -28,6 +29,7 @@ from kivy.app import App
 from kivy.lang import Builder
 from kivy.clock import Clock
 from kivy.animation import Animation
+from kivy.properties import BooleanProperty
 from kivy.uix.button import Button
 from kivy.uix.behaviors import DragBehavior
 from kivy.uix.popup import Popup
@@ -46,16 +48,20 @@ from zq_feedback import ZQFeedbackNote
 class ZQMemoryBanks:
     """Maintains isolated conversation history for each named channel."""
 
+    ALLOWED_CHANNELS = frozenset({"main", "feedback"})
+
     def __init__(self):
         self.banks = {"main": [], "feedback": []}
 
     def add_message(self, channel: str, role: str, content: str):
-        if channel not in self.banks:
-            self.banks[channel] = []
+        if channel not in self.ALLOWED_CHANNELS:
+            raise ValueError(
+                f"Unknown channel {channel!r}. Allowed: {sorted(self.ALLOWED_CHANNELS)}"
+            )
         self.banks[channel].append({"role": role, "content": content})
 
     def get_history(self, channel: str) -> list:
-        return list(self.banks.get(channel, []))
+        return copy.deepcopy(self.banks.get(channel, []))
 
     def clear_memory(self, channel: str):
         if channel in self.banks:
@@ -77,6 +83,9 @@ class INNMApp(App):
     _DRAWER_VISIBLE_RIGHT = 1.0  # flush with right edge of window
     _DRAWER_ANIM_DURATION = 0.3
 
+    # Kivy observable property — KV can bind size_hint to this
+    drawer_open = BooleanProperty(False)
+
     def build(self):
         self.title = "INNM Taskbox"
         base_dir = Path(".").resolve()
@@ -84,7 +93,6 @@ class INNMApp(App):
         self.controller = INNMController(base_dir=base_dir, api_key=api_key)
         self.feedback = ZQFeedbackNote()
         self.memory_banks = ZQMemoryBanks()
-        self._drawer_open = False
         self.folders = store.get("folders", [])
         self.taskboxes_ui = store.get("taskboxes_ui", [])
         self.root = Builder.load_file("ui.kv")
@@ -247,14 +255,14 @@ class INNMApp(App):
     def toggle_feedback_drawer(self):
         """Slide the feedback drawer in/out using Animation."""
         drawer = self.root.ids.feedback_drawer
-        if not self._drawer_open:
+        if not self.drawer_open:
             anim = Animation(
                 pos_hint={"right": self._DRAWER_VISIBLE_RIGHT, "top": 1},
                 duration=self._DRAWER_ANIM_DURATION,
                 t="out_quad",
             )
             anim.start(drawer)
-            self._drawer_open = True
+            self.drawer_open = True
             self.root.ids.feedback_history_display.text = self._get_feedback_history_text()
         else:
             anim = Animation(
@@ -263,7 +271,7 @@ class INNMApp(App):
                 t="in_quad",
             )
             anim.start(drawer)
-            self._drawer_open = False
+            self.drawer_open = False
 
     def send_feedback_message(self, text):
         """Route a message through the feedback channel."""
@@ -284,8 +292,8 @@ class INNMApp(App):
         self._show_in_chat("⏳ Injecting feedback to GitHub...")
 
         def on_github_reply(result, error):
-            disp = self.root.ids.chat_display
-            disp.text = disp.text.replace("\nSystem: ⏳ Injecting feedback to GitHub...", "")
+            chat = self.root.ids.chat_display
+            chat.text = chat.text.replace("\nSystem: ⏳ Injecting feedback to GitHub...", "")
             if error:
                 self._show_in_chat(f"GitHub inject failed: {str(error)}")
             elif result.get("status") == "ok":
