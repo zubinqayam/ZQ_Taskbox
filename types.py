@@ -9,35 +9,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-types.py — Enums and data types for INNM app.
+types.py — DEPRECATED shim. Import from zq_types instead.
+Kept for backward compatibility only.
 """
-from enum import Enum
+# Re-export everything from zq_types so legacy imports keep working
+from zq_types import UserRole, TaskType, SourceType, FeedbackSeverity
 
-
-class UserRole(Enum):
-    GUEST = "guest"
-    PLAYER = "player"
-    ADMIN = "admin"
-
-
-class TaskType(Enum):
-    MTD_YTD = "mtd_ytd"
-    REFERRAL_TRACKER = "referral_tracker"
-    WEEKLY_DECK = "weekly_deck"
-    RESEARCH_DAILY = "research_daily"
-    CUSTOM = "custom"
-
-
-class SourceType(Enum):
-    CORPORATE_EXCEL = "corporate_excel"
-    CSV = "csv"
-    SQL = "sql"
-    NONE = "none"
-    CUSTOM = "custom"
-
-
-class FeedbackSeverity(Enum):
-    POSITIVE = "positive"
-    NEGATIVE = "negative"
-    IMPROVEMENT = "improvement"
-    BUG = "bug"
+__all__ = ["UserRole", "TaskType", "SourceType", "FeedbackSeverity"]
