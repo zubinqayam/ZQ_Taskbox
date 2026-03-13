@@ -216,7 +216,7 @@ Return a STRICTLY VALID JSON object matching this schema:
             },
         )
 
-        if guard_result["ok"] != "true":
+        if not guard_result["ok"]:
             return (
                 "Blocked by GUARD policy. "
                 f"reason={guard_result['reason']}, "
