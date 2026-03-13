@@ -2,6 +2,7 @@
 
 #:import dp kivy.metrics.dp
 #:import DragBehavior kivy.uix.behaviors.drag.DragBehavior
+#:import Animation kivy.animation.Animation
 
 <ZQBubble@DragBehavior+Button>:
     size_hint: None, None
@@ -9,7 +10,7 @@
     text: "ZQ"
     bold: True
     background_color: 0.2, 0.6, 1, 1
-    on_release: app.toggle_zq_panel()
+    on_release: app.toggle_feedback_drawer()
     drag_timeout: 999999
     drag_distance: 5
 
@@ -162,51 +163,48 @@
         pos_hint: {"right": 0.98, "y": 0.05}
 
     BoxLayout:
-        id: zq_panel
+        id: feedback_drawer
         orientation: "vertical"
-        size_hint: 0.33, 0.55
-        pos_hint: {"x": 0.01, "y": 0.02}
-        padding: dp(6)
-        spacing: dp(4)
-        opacity: 0
-        disabled: True
+        size_hint: 0.33, 1
+        pos_hint: {"right": 1.5, "top": 1}
+        padding: dp(8)
+        spacing: dp(6)
         canvas.before:
             Color:
-                rgba: 0.08, 0.08, 0.15, 0.92
+                rgba: 0.08, 0.08, 0.18, 0.95
             Rectangle:
                 pos: self.pos
                 size: self.size
 
         Label:
-            text: "[b]ZQ Feedback Note[/b]"
+            text: "[b]ZQ Feedback[/b]"
             markup: True
             size_hint_y: None
-            height: dp(26)
+            height: dp(30)
+            color: 0.4, 0.8, 1, 1
 
         TextInput:
-            id: zq_history_display
+            id: feedback_history_display
             readonly: True
             font_size: "12sp"
 
         TextInput:
-            id: zq_input
-            hint_text: "+ves / -ves / complaints..."
+            id: feedback_input
+            hint_text: "Type feedback or question..."
             size_hint_y: None
-            height: dp(60)
-            multiline: False
+            height: dp(70)
+            multiline: True
 
         BoxLayout:
             size_hint_y: None
-            height: dp(38)
+            height: dp(40)
             spacing: dp(4)
             Button:
-                text: "Add"
+                text: "Send"
                 on_release:
-                    app.add_zq_feedback(zq_input.text)
-                    zq_input.text = ""
+                    app.send_feedback_message(feedback_input.text)
+                    feedback_input.text = ""
             Button:
-                text: "Send to GitHub"
-                on_release: app.send_zq_to_github()
-            Button:
-                text: "Close"
-                on_release: app.toggle_zq_panel()
+                text: "Inject to GitHub"
+                background_color: 0.2, 0.7, 0.3, 1
+                on_release: app.inject_feedback_to_github()

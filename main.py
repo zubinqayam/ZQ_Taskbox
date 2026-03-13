@@ -14,7 +14,8 @@ main.py — INNM Kivy Application entry point.
 Layout:
   - Fixed master chatbot (left) — talks to INNM-WOSDS controller
   - Tools panel (right)         — folders, taskboxes, settings, profile
-  - Floating ZQ Feedback bubble — standalone feedback chat -> GitHub
+  - Floating ZQ bubble          — toggles slide-in Feedback Drawer (right)
+  - Feedback Drawer             — dual-channel AI chat -> isolated memory -> GitHub
 
 Run: python main.py
 """
@@ -26,6 +27,7 @@ from datetime import datetime
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.clock import Clock
+from kivy.animation import Animation
 from kivy.uix.button import Button
 from kivy.uix.behaviors import DragBehavior
 from kivy.uix.popup import Popup
@@ -38,6 +40,28 @@ from innm_controller import INNMController
 from zq_feedback import ZQFeedbackNote
 
 
+# ════════════════════════════════════════════════
+# ISOLATED MEMORY BANKS (per-channel context)
+# ════════════════════════════════════════════════
+class ZQMemoryBanks:
+    """Maintains isolated conversation history for each named channel."""
+
+    def __init__(self):
+        self.banks = {"main": [], "feedback": []}
+
+    def add_message(self, channel: str, role: str, content: str):
+        if channel not in self.banks:
+            self.banks[channel] = []
+        self.banks[channel].append({"role": role, "content": content})
+
+    def get_history(self, channel: str) -> list:
+        return list(self.banks.get(channel, []))
+
+    def clear_memory(self, channel: str):
+        if channel in self.banks:
+            self.banks[channel] = []
+
+
 class DraggableToolItem(DragBehavior, Button):
     def __init__(self, item_id, item_type, **kw):
         super().__init__(**kw)
@@ -48,12 +72,19 @@ class DraggableToolItem(DragBehavior, Button):
 
 
 class INNMApp(App):
+    # Animation constants for the feedback drawer
+    _DRAWER_HIDDEN_RIGHT = 1.5   # off-screen to the right (matches ui.kv initial pos)
+    _DRAWER_VISIBLE_RIGHT = 1.0  # flush with right edge of window
+    _DRAWER_ANIM_DURATION = 0.3
+
     def build(self):
         self.title = "INNM Taskbox"
         base_dir = Path(".").resolve()
         api_key = store.get("innm_api_key", "")
         self.controller = INNMController(base_dir=base_dir, api_key=api_key)
         self.feedback = ZQFeedbackNote()
+        self.memory_banks = ZQMemoryBanks()
+        self._drawer_open = False
         self.folders = store.get("folders", [])
         self.taskboxes_ui = store.get("taskboxes_ui", [])
         self.root = Builder.load_file("ui.kv")
@@ -73,22 +104,36 @@ class INNMApp(App):
         threading.Thread(target=thread_worker, daemon=True).start()
 
     # ════════════════════════════════════════════════
-    # MASTER CHATBOT (async)
+    # MASTER CHATBOT — channel="main" (async)
     # ════════════════════════════════════════════════
-    def send_message(self, text):
+    def send_message(self, text, channel="main"):
+        """Send *text* through *channel* ("main" or "feedback").
+
+        The message is stored in the corresponding ZQMemoryBanks bank, routed
+        to the INNM controller for an AI reply, and the result is appended to
+        the channel's history TextInput widget.
+        """
         text = (text or "").strip()
         if not text:
             return
-        disp = self.root.ids.chat_display
+        self.memory_banks.add_message(channel, "user", text)
+        if channel == "main":
+            disp = self.root.ids.chat_display
+            prefix = "INNM"
+        else:
+            disp = self.root.ids.feedback_history_display
+            prefix = "ZQ"
         disp.text += f"\n\nYou: {text}"
-        disp.text += f"\nINNM: ⏳ Thinking..."
+        disp.text += f"\n{prefix}: ⏳ Thinking..."
 
         def on_innm_reply(reply, error):
-            disp.text = disp.text.replace("\nINNM: ⏳ Thinking...", "")
+            disp.text = disp.text.replace(f"\n{prefix}: ⏳ Thinking...", "")
             if error:
-                disp.text += f"\nINNM: ⚠️ Error: {str(error)}"
+                msg = f"⚠️ Error: {str(error)}"
             else:
-                disp.text += f"\nINNM: {reply}"
+                msg = reply
+            self.memory_banks.add_message(channel, "assistant", msg)
+            disp.text += f"\n{prefix}: {msg}"
 
         self.run_in_background(self.controller.process_message, on_innm_reply, text)
 
@@ -194,40 +239,81 @@ class INNMApp(App):
         popup.open()
 
     # ════════════════════════════════════════════════
-    # ZQ FEEDBACK NOTE (async GitHub)
+    # FEEDBACK DRAWER — channel="feedback"
     # ════════════════════════════════════════════════
-    def toggle_zq_panel(self):
-        panel = self.root.ids.zq_panel
-        if panel.disabled:
-            panel.disabled = False
-            panel.opacity = 1
-            self.root.ids.zq_history_display.text = self.feedback.get_history_text()
+    def toggle_feedback_drawer(self):
+        """Slide the feedback drawer in/out using Animation."""
+        drawer = self.root.ids.feedback_drawer
+        if not self._drawer_open:
+            anim = Animation(
+                pos_hint={"right": self._DRAWER_VISIBLE_RIGHT, "top": 1},
+                duration=self._DRAWER_ANIM_DURATION,
+                t="out_quad",
+            )
+            anim.start(drawer)
+            self._drawer_open = True
+            self.root.ids.feedback_history_display.text = self._get_feedback_history_text()
         else:
-            panel.disabled = True
-            panel.opacity = 0
+            anim = Animation(
+                pos_hint={"right": self._DRAWER_HIDDEN_RIGHT, "top": 1},
+                duration=self._DRAWER_ANIM_DURATION,
+                t="in_quad",
+            )
+            anim.start(drawer)
+            self._drawer_open = False
 
-    def add_zq_feedback(self, text):
-        text = (text or "").strip()
-        if not text:
+    def send_feedback_message(self, text):
+        """Route a message through the feedback channel."""
+        self.send_message(text, channel="feedback")
+
+    def inject_feedback_to_github(self):
+        """Send feedback channel history to GitHub via zq_feedback.py."""
+        history = self.memory_banks.get_history("feedback")
+        if not history:
+            self._show_in_chat("No feedback to inject.")
             return
-        self.feedback.add_feedback(text)
-        self.root.ids.zq_history_display.text = self.feedback.get_history_text()
-
-    def send_zq_to_github(self):
-        self._show_in_chat("⏳ Sending feedback to GitHub...")
+        self.feedback.clear_history()
+        for msg in history:
+            # Only user-authored messages are forwarded to GitHub; AI responses
+            # are context-only and not included in the submitted feedback report.
+            if msg["role"] == "user":
+                self.feedback.add_feedback(msg["content"])
+        self._show_in_chat("⏳ Injecting feedback to GitHub...")
 
         def on_github_reply(result, error):
             disp = self.root.ids.chat_display
-            disp.text = disp.text.replace("\nSystem: ⏳ Sending feedback to GitHub...", "")
+            disp.text = disp.text.replace("\nSystem: ⏳ Injecting feedback to GitHub...", "")
             if error:
-                self._show_in_chat(f"GitHub send failed: {str(error)}")
+                self._show_in_chat(f"GitHub inject failed: {str(error)}")
             elif result.get("status") == "ok":
-                self._show_in_chat(f"Feedback sent to GitHub: {result.get('url', '')}")
+                self._show_in_chat(f"Feedback injected to GitHub: {result.get('url', '')}")
+                self.memory_banks.clear_memory("feedback")
+                self.root.ids.feedback_history_display.text = ""
             else:
-                self._show_in_chat(f"GitHub send failed: {result.get('message', '')}")
+                self._show_in_chat(f"GitHub inject failed: {result.get('message', '')}")
 
         title = "ZQ Feedback Session — " + datetime.now().strftime("%Y-%m-%d %H:%M")
         self.run_in_background(self.feedback.send_to_github, on_github_reply, title=title)
+
+    def _get_feedback_history_text(self) -> str:
+        history = self.memory_banks.get_history("feedback")
+        lines = []
+        for msg in history:
+            role = "You" if msg["role"] == "user" else "ZQ"
+            lines.append(f"{role}: {msg['content']}")
+        return "\n\n".join(lines)
+
+    # ════════════════════════════════════════════════
+    # LEGACY ZQ PANEL DELEGATES (backward-compat)
+    # ════════════════════════════════════════════════
+    def toggle_zq_panel(self):
+        self.toggle_feedback_drawer()
+
+    def add_zq_feedback(self, text):
+        self.send_feedback_message(text)
+
+    def send_zq_to_github(self):
+        self.inject_feedback_to_github()
 
     # ════════════════════════════════════════════════
     # SETTINGS / PROFILE (stubs)
