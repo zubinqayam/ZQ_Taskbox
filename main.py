@@ -56,9 +56,10 @@ class INNMApp(App):
         self.feedback = ZQFeedbackNote()
         self.folders = store.get("folders", [])
         self.taskboxes_ui = store.get("taskboxes_ui", [])
-        self.root = Builder.load_file("ui.kv")
+        return Builder.load_file("ui.kv")
+
+    def on_start(self):
         Clock.schedule_once(lambda dt: self._render_lists(), 0)
-        return self.root
 
     # ════════════════════════════════════════════════
     # BACKGROUND TASK HELPER
