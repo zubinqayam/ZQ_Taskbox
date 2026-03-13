@@ -8,6 +8,6 @@ python -m pip install --upgrade pip
 python -m pip install pyinstaller
 
 Write-Host "[3/3] Building INNM_Taskbox.exe..."
-python -m PyInstaller --noconfirm INNM_Taskbox.spec
+python -m PyInstaller --noconfirm --onefile --windowed --name INNM_Taskbox --add-data "ui.kv;." main.py
 
 Write-Host "Build complete: dist/INNM_Taskbox.exe"

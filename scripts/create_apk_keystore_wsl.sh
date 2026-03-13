@@ -31,8 +31,8 @@ keytool -genkeypair \
   -keyalg RSA \
   -keysize 2048 \
   -validity "$KEY_VALIDITY_DAYS" \
-  -storepass "$APK_KEYSTORE_PASSWORD" \
-  -keypass "$APK_KEY_PASSWORD" \
+  -storepass:env APK_KEYSTORE_PASSWORD \
+  -keypass:env APK_KEY_PASSWORD \
   -dname "$KEY_DNAME"
 
 echo "Keystore created: $KEYSTORE_PATH"
