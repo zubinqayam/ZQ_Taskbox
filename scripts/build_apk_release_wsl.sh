@@ -47,8 +47,8 @@ echo "[5/6] Aligning and signing APK"
 "$APKSIGNER" sign \
   --ks "$KEYSTORE_PATH" \
   --ks-key-alias "$KEY_ALIAS" \
-  --ks-pass "pass:$APK_KEYSTORE_PASSWORD" \
-  --key-pass "pass:$APK_KEY_PASSWORD" \
+  --ks-pass "env:APK_KEYSTORE_PASSWORD" \
+  --key-pass "env:APK_KEY_PASSWORD" \
   --out "$SIGNED_APK" \
   "$ALIGNED_APK"
 

@@ -7,6 +7,8 @@ Write-Host "[2/4] Installing packaging dependencies..."
 python -m pip install --upgrade pip
 python -m pip install pyinstaller
 
+Write-Host "[3/3] Building INNM_Taskbox.exe..."
+python -m PyInstaller --noconfirm --onefile --windowed --name INNM_Taskbox --add-data "ui.kv;." main.py
 Write-Host "[3/4] Installing project dependencies from requirements.txt..."
 if (Test-Path "requirements.txt") {
     python -m pip install -r requirements.txt
