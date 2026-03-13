@@ -78,7 +78,7 @@ class INNMApp(App):
                 result = target_func(*args, **kwargs)
                 Clock.schedule_once(lambda dt: callback(result, None), 0)
             except Exception as e:
-                Clock.schedule_once(lambda dt: callback(None, e), 0)
+                Clock.schedule_once(lambda dt, err=e: callback(None, err), 0)
         threading.Thread(target=thread_worker, daemon=True).start()
 
     # ================================================
