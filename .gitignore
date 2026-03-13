@@ -1,11 +1,50 @@
-.venv/
+# — Python ——————————————————————————————————————
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# — Virtual environment ————————————————————
+venv/
+.venv/
+env/
+
+# — Test / type caches ————————————————————
 .pytest_cache/
 .mypy_cache/
-build/
+
+# — Kivy / app data ———————————————————————
+.kivy/
+*.kivyc
+ui_state.json
+secure.json
+
+# — Build output —————————————————————————
 dist/
-*.spec
+build/
+*.spec.bak
+.buildozer/
+
+# — IDE ————————————————————————————————————
+.vscode/
+.idea/
+*.swp
+
+# — OS ——————————————————————————————————————
+.DS_Store
+Thumbs.db
+
+# — Secrets / keys ——————————————————————
+.env
+*.key
+secrets.json
+.secrets/
+
+# — INNM runtime ————————————————————————
 .innm/
 *.log
-.secrets/
+
+# — Data / Excel files (optional — remove lines if you want to track) ——
+# *.xlsx
+# *.csv
