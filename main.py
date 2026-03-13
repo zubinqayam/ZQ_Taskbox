@@ -12,9 +12,9 @@
 main.py — INNM Kivy Application entry point.
 
 Layout:
-  - Fixed master chatbot (left) — talks to INNM-WOSDS controller
-  - Tools panel (right)         — folders, taskboxes, settings, profile
-  - Floating ZQ Feedback bubble — standalone feedback chat -> GitHub
+  - Fixed master chatbot (left)  — talks to INNM-WOSDS controller
+  - Tools panel (right)          — folders, taskboxes, settings, profile
+  - Floating ZQ Feedback bubble  — standalone feedback chat -> GitHub
 
 Run: python main.py
 """
@@ -37,12 +37,16 @@ import storage as store
 from innm_controller import INNMController
 from zq_feedback import ZQFeedbackNote
 
+# ---- Resolve paths relative to THIS file, not the working directory ----
+_BASE_DIR = Path(__file__).parent.resolve()
+_KV_FILE  = str(_BASE_DIR / "ui.kv")
+
 
 class DraggableToolItem(DragBehavior, Button):
     def __init__(self, item_id, item_type, **kw):
         super().__init__(**kw)
-        self.item_id = item_id
-        self.item_type = item_type
+        self.item_id      = item_id
+        self.item_type    = item_type
         self.drag_timeout = 999999
         self.drag_distance = 5
 
@@ -50,20 +54,22 @@ class DraggableToolItem(DragBehavior, Button):
 class INNMApp(App):
     def build(self):
         self.title = "INNM Taskbox"
-        base_dir = Path(".").resolve()
         api_key = store.get("innm_api_key", "")
-        self.controller = INNMController(base_dir=base_dir, api_key=api_key)
-        self.feedback = ZQFeedbackNote()
-        self.folders = store.get("folders", [])
+        self.controller = INNMController(base_dir=_BASE_DIR, api_key=api_key)
+        self.feedback    = ZQFeedbackNote()
+        self.folders     = store.get("folders", [])
         self.taskboxes_ui = store.get("taskboxes_ui", [])
-        return Builder.load_file("ui.kv")
 
-    def on_start(self):
+        # Build the UI tree from the .kv file
+        root = Builder.load_file(_KV_FILE)
+
+        # Defer list rendering until after the widget tree is fully attached
         Clock.schedule_once(lambda dt: self._render_lists(), 0)
+        return root  # <-- Kivy sets self.root from this return value
 
-    # ════════════════════════════════════════════════
+    # ================================================
     # BACKGROUND TASK HELPER
-    # ════════════════════════════════════════════════
+    # ================================================
     def run_in_background(self, target_func, callback, *args, **kwargs):
         def thread_worker():
             try:
@@ -73,9 +79,9 @@ class INNMApp(App):
                 Clock.schedule_once(lambda dt: callback(None, e), 0)
         threading.Thread(target=thread_worker, daemon=True).start()
 
-    # ════════════════════════════════════════════════
+    # ================================================
     # MASTER CHATBOT (async)
-    # ════════════════════════════════════════════════
+    # ================================================
     def send_message(self, text):
         text = (text or "").strip()
         if not text:
@@ -93,9 +99,9 @@ class INNMApp(App):
 
         self.run_in_background(self.controller.process_message, on_innm_reply, text)
 
-    # ════════════════════════════════════════════════
+    # ================================================
     # FOLDERS
-    # ════════════════════════════════════════════════
+    # ================================================
     def add_folder(self, name):
         name = (name or "").strip()
         if not name:
@@ -112,9 +118,9 @@ class INNMApp(App):
             return
         self.root.ids.chat_display.text += f"\n\n[Folder: {f['name']}] opened."
 
-    # ════════════════════════════════════════════════
+    # ================================================
     # TASKBOXES
-    # ════════════════════════════════════════════════
+    # ================================================
     def add_taskbox(self, name):
         name = (name or "").strip()
         if not name:
@@ -124,7 +130,10 @@ class INNMApp(App):
         self.taskboxes_ui.append(entry)
         store.set("taskboxes_ui", self.taskboxes_ui)
         self.controller.register_taskbox(
-            tb_id=tb_id, project=name, task_type="custom", source_id="corporate_excel",
+            tb_id=tb_id,
+            project=name,
+            task_type="custom",
+            source_id="corporate_excel",
         )
         self._render_lists()
         self._show_in_chat(f"Taskbox created: {name} (id={tb_id})")
@@ -135,32 +144,42 @@ class INNMApp(App):
             return
         self.root.ids.chat_display.text += f"\n\n[Taskbox: {t['name']}] opened."
 
-    # ════════════════════════════════════════════════
+    # ================================================
     # RENDER LISTS
-    # ════════════════════════════════════════════════
+    # ================================================
     def _render_lists(self):
-        fl = self.root.ids.folder_list
-        tl = self.root.ids.taskbox_list
+        if self.root is None:
+            return
+        fl = self.root.ids.get("folder_list")
+        tl = self.root.ids.get("taskbox_list")
+        if fl is None or tl is None:
+            return
         fl.clear_widgets()
         tl.clear_widgets()
         for f in self.folders:
             btn = DraggableToolItem(
-                item_id=f["id"], item_type="folder",
-                text=f["name"], size_hint_y=None, height=34,
+                item_id=f["id"],
+                item_type="folder",
+                text=f["name"],
+                size_hint_y=None,
+                height=34,
             )
             btn.bind(on_release=lambda inst, fid=f["id"]: self.open_folder(fid))
             fl.add_widget(btn)
         for t in self.taskboxes_ui:
             btn = DraggableToolItem(
-                item_id=t["id"], item_type="taskbox",
-                text=t["name"], size_hint_y=None, height=34,
+                item_id=t["id"],
+                item_type="taskbox",
+                text=t["name"],
+                size_hint_y=None,
+                height=34,
             )
             btn.bind(on_release=lambda inst, tid=t["id"]: self.open_taskbox(tid))
             tl.add_widget(btn)
 
-    # ════════════════════════════════════════════════
+    # ================================================
     # DRAG & DROP
-    # ════════════════════════════════════════════════
+    # ================================================
     def handle_drop(self, touch):
         widget = touch.grab_current
         if isinstance(widget, DraggableToolItem):
@@ -177,15 +196,17 @@ class INNMApp(App):
 
     def _prompt_name(self, title, callback):
         content = BoxLayout(orientation="vertical", spacing=5, padding=5)
-        ti = TextInput(multiline=False)
-        btns = BoxLayout(size_hint_y=None, height=40, spacing=5)
-        popup = Popup(title=title, content=content, size_hint=(0.6, 0.3))
-        ok_btn = Button(text="OK")
+        ti      = TextInput(multiline=False)
+        btns    = BoxLayout(size_hint_y=None, height=40, spacing=5)
+        popup   = Popup(title=title, content=content, size_hint=(0.6, 0.3))
+        ok_btn     = Button(text="OK")
         cancel_btn = Button(text="Cancel")
+
         def on_ok(*_):
             if ti.text.strip():
                 callback(ti.text.strip())
             popup.dismiss()
+
         ok_btn.bind(on_release=on_ok)
         cancel_btn.bind(on_release=lambda *_: popup.dismiss())
         btns.add_widget(ok_btn)
@@ -194,18 +215,18 @@ class INNMApp(App):
         content.add_widget(btns)
         popup.open()
 
-    # ════════════════════════════════════════════════
+    # ================================================
     # ZQ FEEDBACK NOTE (async GitHub)
-    # ════════════════════════════════════════════════
+    # ================================================
     def toggle_zq_panel(self):
         panel = self.root.ids.zq_panel
         if panel.disabled:
             panel.disabled = False
-            panel.opacity = 1
+            panel.opacity  = 1
             self.root.ids.zq_history_display.text = self.feedback.get_history_text()
         else:
             panel.disabled = True
-            panel.opacity = 0
+            panel.opacity  = 0
 
     def add_zq_feedback(self, text):
         text = (text or "").strip()
@@ -230,22 +251,22 @@ class INNMApp(App):
         title = "ZQ Feedback Session — " + datetime.now().strftime("%Y-%m-%d %H:%M")
         self.run_in_background(self.feedback.send_to_github, on_github_reply, title=title)
 
-    # ════════════════════════════════════════════════
-    # SETTINGS / PROFILE (stubs)
-    # ════════════════════════════════════════════════
+    # ================================================
+    # SETTINGS / PROFILE
+    # ================================================
     def open_settings_screen(self):
         self._show_in_chat("Settings screen — configure INNM API key and preferences.")
 
     def open_profile_screen(self):
         self._show_in_chat("Profile screen — user info and role management.")
 
-    # ════════════════════════════════════════════════
+    # ================================================
     # HELPERS
-    # ════════════════════════════════════════════════
+    # ================================================
     def _show_in_chat(self, text):
-        self.root.ids.chat_display.text += f"\nSystem: {text}"
+        if self.root is not None:
+            self.root.ids.chat_display.text += f"\nSystem: {text}"
 
 
 if __name__ == "__main__":
     INNMApp().run()
-
