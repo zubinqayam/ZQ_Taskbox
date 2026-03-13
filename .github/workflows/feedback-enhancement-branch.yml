@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
 
@@ -42,23 +42,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH="${{ steps.branch_name.outputs.branch }}"
-          git config user.name  "ZQ-Feedback-Bot"
+          git config user.name "ZQ-Feedback-Bot"
           git config user.email "feedback-bot@zqailogic.com"
           git checkout -b "$BRANCH"
-
           # Stamp a version note file into the new branch
           mkdir -p .zq_enhancements
-          cat > .zq_enhancements/issue-${{ steps.branch_name.outputs.issue_num }}.md << 'MARKER'
-          # ZQ Enhancement Note
-          - Issue: #${{ github.event.issue.number }}
-          - Title: ${{ github.event.issue.title }}
-          - Created: $(date -u +"%Y-%m-%d %H:%M UTC")
-          - Branch: ${{ steps.branch_name.outputs.branch }}
-          - Status: OPEN — Ready for version upgrade work
-          MARKER
-
+          ISSUE_NUM="${{ steps.branch_name.outputs.issue_num }}"
+          printf '# ZQ Enhancement Note\n- Issue: #%s\n- Title: %s\n- Created: %s\n- Branch: %s\n- Status: OPEN - Ready for version upgrade work\n' \
+            "$ISSUE_NUM" \
+            "${{ github.event.issue.title }}" \
+            "$(date -u +'%Y-%m-%d %H:%M UTC')" \
+            "$BRANCH" \
+            > ".zq_enhancements/issue-${ISSUE_NUM}.md"
           git add .zq_enhancements/
-          git commit -m "chore: initialize enhancement branch for issue #${{ steps.branch_name.outputs.issue_num }}"
+          git commit -m "chore: initialize enhancement branch for issue #${ISSUE_NUM}"
           git push origin "$BRANCH"
 
       - name: Comment on Issue with branch link
@@ -70,7 +67,6 @@ jobs:
           REPO="${{ github.repository }}"
           gh issue comment "$ISSUE_NUM" \
             --body "## ZQ Enhancement Workbranch Created
-
 **Branch:** \`${BRANCH}\`
 **Repo:** [${REPO}](https://github.com/${REPO}/tree/${BRANCH})
 
