@@ -28,7 +28,12 @@ except ImportError:
     HAS_REQUESTS = False
 
 import storage as store
+from innm_connect import INNMConnect
+from innm_guard import INNMGuard
 from coordinator import Coordinator
+from innm_governance import INNMGovernance
+from innm_tracker import INNMTracker
+from innm_validater import INNMValidater
 from zq_taskbox import ZQTaskbox
 
 
@@ -37,6 +42,11 @@ class INNMController:
         self.base_dir = base_dir
         self.api_key = api_key
         self.coordinator = Coordinator(base_dir)
+        self.governance = INNMGovernance()
+        self.connect = INNMConnect()
+        self.validater = INNMValidater()
+        self.guard = INNMGuard()
+        self.tracker = INNMTracker(self.governance)
         self.taskboxes: Dict[str, ZQTaskbox] = {}
         self._load_taskboxes_from_registry()
 
@@ -172,10 +182,106 @@ Return a STRICTLY VALID JSON object matching this schema:
         data_slice = self.coordinator.slice_for_taskbox(tb.id, source_obj, params)
         return tb.run(data_slice, params)
 
-    def process_message(self, text: str) -> str:
-        intent = self.parse_intent(text)
-        result = self.handle_intent(intent)
-        return result.get("summary", result.get("message", "Done."))
+    def process_message(self, text: str, agent_id: str = "ui_user", source: str = "chat_ui") -> str:
+        normalized = self.connect.normalize(payload=text, source=source)
+        validation = self.validater.validate_request(normalized)
+        if not validation["ok"]:
+            return "Validation failed: " + "; ".join(validation["errors"])
+
+        envelope = self.governance.create_intake_envelope(
+            payload=normalized["payload"],
+            agent_id=agent_id,
+            source=normalized["source"],
+        )
+        profile = store.get(f"agent_profile:{agent_id}", {})
+        trust_eval = self.governance.calculate_trust_score(profile)
+        decision = self.governance.enforce_trust_score(
+            score=trust_eval["score"],
+            grade=trust_eval["grade"],
+        )
+        guard_result = self.guard.authorize(normalized["source"], decision)
+
+        self.tracker.record(
+            provenance_id=envelope["provenance_id"],
+            agent_id=agent_id,
+            action_type="intake",
+            trust_score=trust_eval["score"],
+            metadata={
+                "plane": "I-Box",
+                "payload_hash": envelope["payload_hash"],
+                "decision": decision.action,
+                "grade": decision.grade,
+                "guard_reason": guard_result["reason"],
+                "payload_len": validation["payload_len"],
+            },
+        )
+
+        if not guard_result["ok"]:
+            return (
+                "Blocked by GUARD policy. "
+                f"reason={guard_result['reason']}, "
+                f"provenance_id={envelope['provenance_id'][:16]}..."
+            )
+
+        try:
+            intent = self.parse_intent(normalized["payload"])
+            result = self.handle_intent(intent)
+
+            self.tracker.record(
+                provenance_id=envelope["provenance_id"],
+                agent_id=agent_id,
+                action_type="process_message",
+                trust_score=trust_eval["score"],
+                metadata={
+                    "plane": "Top Matrix",
+                    "status": result.get("status", "unknown"),
+                    "intent_action": intent.get("action", "unknown"),
+                    "taskbox_id": intent.get("taskbox_id"),
+                },
+            )
+
+            base = result.get("summary", result.get("message", "Done."))
+            if decision.action == "jit_approval":
+                return (
+                    "JIT approval required for high-risk actions. "
+                    f"(grade={decision.grade}, score={decision.score:.2f})\n"
+                    f"{base}"
+                )
+            if decision.action == "warn_monitor":
+                return (
+                    "Warning: elevated monitoring active. "
+                    f"(grade={decision.grade}, score={decision.score:.2f})\n"
+                    f"{base}"
+                )
+            return base
+        except Exception as e:
+            encoded = self.governance.encode_error_signature(
+                e,
+                context={
+                    "agent_id": agent_id,
+                    "source": source,
+                    "payload_hash": envelope["payload_hash"],
+                },
+            )
+            self.tracker.record(
+                provenance_id=envelope["provenance_id"],
+                agent_id=agent_id,
+                action_type="error",
+                trust_score=trust_eval["score"],
+                error_signature=encoded["signature"],
+                metadata={
+                    "plane": "Dream Cycle",
+                    "is_repeat": encoded["is_repeat"],
+                    "repeat_count": encoded["count"],
+                    "error_type": e.__class__.__name__,
+                },
+            )
+            repeat_note = "repeat" if encoded["is_repeat"] else "new"
+            return (
+                "INNM captured an execution error under Non-Repeating Error Doctrine. "
+                f"signature={encoded['signature'][:16]}..., type={repeat_note}, "
+                f"count={encoded['count']}"
+            )
 
     def list_taskboxes(self) -> list:
         return [

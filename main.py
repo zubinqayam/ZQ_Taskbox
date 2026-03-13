@@ -45,8 +45,8 @@ _KV_FILE  = str(_BASE_DIR / "ui.kv")
 class DraggableToolItem(DragBehavior, Button):
     def __init__(self, item_id, item_type, **kw):
         super().__init__(**kw)
-        self.item_id = item_id
-        self.item_type = item_type
+        self.item_id      = item_id
+        self.item_type    = item_type
         self.drag_timeout = 999999
         self.drag_distance = 5
 
@@ -224,11 +224,11 @@ class INNMApp(App):
         panel = self.root.ids.zq_panel
         if panel.disabled:
             panel.disabled = False
-            panel.opacity = 1
+            panel.opacity  = 1
             self.root.ids.zq_history_display.text = self.feedback.get_history_text()
         else:
             panel.disabled = True
-            panel.opacity = 0
+            panel.opacity  = 0
 
     def add_zq_feedback(self, text):
         text = (text or "").strip()

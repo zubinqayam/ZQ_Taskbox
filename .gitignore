@@ -1,41 +1,50 @@
-# ── Python ──────────────────────────────────────────────────────
+# — Python ——————————————————————————————————————
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyo
 *.pyd
 
-# ── Virtual environment ─────────────────────────────────
+# — Virtual environment ————————————————————
 venv/
 .venv/
 env/
 
-# ── Kivy / app data ────────────────────────────────────
+# — Test / type caches ————————————————————
+.pytest_cache/
+.mypy_cache/
+
+# — Kivy / app data ———————————————————————
 .kivy/
 *.kivyc
 ui_state.json
 secure.json
 
-# ── Build output ───────────────────────────────────────
+# — Build output —————————————————————————
 dist/
 build/
 *.spec.bak
 .buildozer/
 
-# ── IDE ──────────────────────────────────────────────────
+# — IDE ————————————————————————————————————
 .vscode/
 .idea/
 *.swp
 
-# ── OS ───────────────────────────────────────────────────
+# — OS ——————————————————————————————————————
 .DS_Store
 Thumbs.db
 
-# ── Secrets / keys ────────────────────────────────────
+# — Secrets / keys ——————————————————————
 .env
 *.key
 secrets.json
+.secrets/
 
-# ── Data / Excel files (optional — remove lines if you want to track) ──
+# — INNM runtime ————————————————————————
+.innm/
+*.log
+
+# — Data / Excel files (optional — remove lines if you want to track) ——
 # *.xlsx
 # *.csv
