@@ -9,7 +9,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-types.py — Enums and data types for INNM app.
+zq_types.py — Enums and data types for INNM app.
+Renamed from types.py to avoid shadowing Python stdlib types module.
 """
 from enum import Enum
 
