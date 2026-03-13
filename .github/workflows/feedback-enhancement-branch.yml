@@ -42,13 +42,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH="${{ steps.branch_name.outputs.branch }}"
+          ISSUE_NUM="${{ steps.branch_name.outputs.issue_num }}"
           git config user.name "ZQ-Feedback-Bot"
           git config user.email "feedback-bot@zqailogic.com"
           git checkout -b "$BRANCH"
-          # Stamp a version note file into the new branch
           mkdir -p .zq_enhancements
-          ISSUE_NUM="${{ steps.branch_name.outputs.issue_num }}"
-          printf '# ZQ Enhancement Note\n- Issue: #%s\n- Title: %s\n- Created: %s\n- Branch: %s\n- Status: OPEN - Ready for version upgrade work\n' \
+          printf '# ZQ Enhancement Note\n- Issue: #%s\n- Title: %s\n- Created: %s\n- Branch: %s\n- Status: OPEN\n' \
             "$ISSUE_NUM" \
             "${{ github.event.issue.title }}" \
             "$(date -u +'%Y-%m-%d %H:%M UTC')" \
@@ -65,10 +64,5 @@ jobs:
           ISSUE_NUM="${{ steps.branch_name.outputs.issue_num }}"
           BRANCH="${{ steps.branch_name.outputs.branch }}"
           REPO="${{ github.repository }}"
-          gh issue comment "$ISSUE_NUM" \
-            --body "## ZQ Enhancement Workbranch Created
-**Branch:** \`${BRANCH}\`
-**Repo:** [${REPO}](https://github.com/${REPO}/tree/${BRANCH})
-
-> This branch was automatically forged by the ZQ Feedback Pipeline.
-> Ready for version enhancement commits."
+          COMMENT="ZQ Enhancement Workbranch Created: Branch=${BRANCH} Repo=https://github.com/${REPO}/tree/${BRANCH} - Automatically forged by the ZQ Feedback Pipeline. Ready for version enhancement commits."
+          gh issue comment "$ISSUE_NUM" --body "$COMMENT"
