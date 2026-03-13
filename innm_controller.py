@@ -28,8 +28,12 @@ except ImportError:
     HAS_REQUESTS = False
 
 import storage as store
+from innm_connect import INNMConnect
+from innm_guard import INNMGuard
 from coordinator import Coordinator
 from innm_governance import INNMGovernance
+from innm_tracker import INNMTracker
+from innm_validater import INNMValidater
 from zq_taskbox import ZQTaskbox
 
 
@@ -39,6 +43,10 @@ class INNMController:
         self.api_key = api_key
         self.coordinator = Coordinator(base_dir)
         self.governance = INNMGovernance()
+        self.connect = INNMConnect()
+        self.validater = INNMValidater()
+        self.guard = INNMGuard()
+        self.tracker = INNMTracker(self.governance)
         self.taskboxes: Dict[str, ZQTaskbox] = {}
         self._load_taskboxes_from_registry()
 
@@ -175,10 +183,15 @@ Return a STRICTLY VALID JSON object matching this schema:
         return tb.run(data_slice, params)
 
     def process_message(self, text: str, agent_id: str = "ui_user", source: str = "chat_ui") -> str:
+        normalized = self.connect.normalize(payload=text, source=source)
+        validation = self.validater.validate_request(normalized)
+        if not validation["ok"]:
+            return "Validation failed: " + "; ".join(validation["errors"])
+
         envelope = self.governance.create_intake_envelope(
-            payload=text,
+            payload=normalized["payload"],
             agent_id=agent_id,
-            source=source,
+            source=normalized["source"],
         )
         profile = store.get(f"agent_profile:{agent_id}", {})
         trust_eval = self.governance.calculate_trust_score(profile)
@@ -186,8 +199,9 @@ Return a STRICTLY VALID JSON object matching this schema:
             score=trust_eval["score"],
             grade=trust_eval["grade"],
         )
+        guard_result = self.guard.authorize(normalized["source"], decision)
 
-        self.governance.log_event(
+        self.tracker.record(
             provenance_id=envelope["provenance_id"],
             agent_id=agent_id,
             action_type="intake",
@@ -197,8 +211,17 @@ Return a STRICTLY VALID JSON object matching this schema:
                 "payload_hash": envelope["payload_hash"],
                 "decision": decision.action,
                 "grade": decision.grade,
+                "guard_reason": guard_result["reason"],
+                "payload_len": validation["payload_len"],
             },
         )
+
+        if guard_result["ok"] != "true":
+            return (
+                "Blocked by GUARD policy. "
+                f"reason={guard_result['reason']}, "
+                f"provenance_id={envelope['provenance_id'][:16]}..."
+            )
 
         if decision.action == "suspend_block":
             return (
@@ -208,10 +231,10 @@ Return a STRICTLY VALID JSON object matching this schema:
             )
 
         try:
-            intent = self.parse_intent(text)
+            intent = self.parse_intent(normalized["payload"])
             result = self.handle_intent(intent)
 
-            self.governance.log_event(
+            self.tracker.record(
                 provenance_id=envelope["provenance_id"],
                 agent_id=agent_id,
                 action_type="process_message",
@@ -247,7 +270,7 @@ Return a STRICTLY VALID JSON object matching this schema:
                     "payload_hash": envelope["payload_hash"],
                 },
             )
-            self.governance.log_event(
+            self.tracker.record(
                 provenance_id=envelope["provenance_id"],
                 agent_id=agent_id,
                 action_type="error",
