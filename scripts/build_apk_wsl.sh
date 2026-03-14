@@ -19,8 +19,20 @@ elif command -v dnf >/dev/null 2>&1; then
   run_pkg_cmd dnf -y install \
     git zip unzip python3-pip autoconf libtool pkgconf-pkg-config patch \
     zlib-devel ncurses-devel libffi-devel openssl-devel
-  run_pkg_cmd dnf -y install java-25-openjdk-devel
-  echo "Using java-25-openjdk-devel (detected)"
+  java_pkgs=("java-25-openjdk-devel" "java-21-openjdk-devel" "java-17-openjdk-devel")
+  selected_java_pkg=""
+  for pkg in "${java_pkgs[@]}"; do
+    if dnf list available "$pkg" >/dev/null 2>&1 || dnf list installed "$pkg" >/dev/null 2>&1; then
+      selected_java_pkg="$pkg"
+      break
+    fi
+  done
+  if [[ -n "$selected_java_pkg" ]]; then
+    run_pkg_cmd dnf -y install "$selected_java_pkg"
+    echo "Using $selected_java_pkg (selected via dnf detection)"
+  else
+    echo "No suitable OpenJDK package found via dnf (tried: ${java_pkgs[*]}). Please install Java manually."
+  fi
 else
   echo "Unsupported package manager. Install dependencies manually."
   exit 1

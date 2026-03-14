@@ -11,6 +11,7 @@ on:
 jobs:
   build-exe:
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -18,23 +19,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
 
-      - name: Set up venv and install Kivy dependencies
-        shell: bash
+      - name: Install dependencies
+        shell: pwsh
         run: |
-          python -m venv venv
-          venv/Scripts/python -m pip install --upgrade pip
-          venv/Scripts/python -m pip install kivy[base] kivy_deps.sdl2 kivy_deps.glew
-          venv/Scripts/python -m pip install -r requirements.txt
-          venv/Scripts/python -m pip install pyinstaller
+          python -m pip install --upgrade pip
+          python -m pip install kivy[base] kivy_deps.sdl2 kivy_deps.glew
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
 
       - name: Build EXE
-        shell: bash
+        shell: pwsh
         run: |
-          venv/Scripts/python -m PyInstaller --noconfirm --onefile --windowed \
-            --name INNM_Taskbox \
-            --add-data "ui.kv;." \
+          python -m PyInstaller --noconfirm --onefile --windowed `
+            --name INNM_Taskbox `
+            --add-data "ui.kv;." `
             main.py
 
       - name: Upload EXE artifact
@@ -45,29 +45,59 @@ jobs:
 
   build-apk:
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
 
-      - name: Install Java and Buildozer system deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk autoconf libtool pkg-config \
-            zlib1g-dev libncurses-dev libffi-dev libssl-dev
+      - name: Cache Buildozer global dir
+        uses: actions/cache@v4
+        with:
+          path: ~/.buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
 
-      - name: Install Buildozer
+      - name: Install system dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install cython==0.29.33 buildozer
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            git zip unzip wget curl \
+            openjdk-17-jdk \
+            autoconf automake libtool pkg-config \
+            zlib1g-dev libncurses5-dev libffi-dev libssl-dev \
+            cmake build-essential libltdl-dev \
+            libsqlite3-dev libbz2-dev \
+            python3-dev python3-pip \
+            ccache patch
+
+      - name: Install Python build tools
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install "cython==0.29.33"
+          python -m pip install buildozer
 
       - name: Build APK (debug)
-        run: buildozer android debug
+        env:
+          GRADLE_OPTS: "-Xmx3g -Dorg.gradle.daemon=false"
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_SDK_ROOT: /root/.buildozer/android/platform/android-sdk
+        run: |
+          yes | buildozer android debug 2>&1 | tee buildozer.log
+          echo "=== APK files ==="
+          ls bin/ 2>/dev/null || echo "No APK found in bin/"
+
+      - name: Upload build log (always)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: buildozer-log
+          path: buildozer.log
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

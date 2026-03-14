@@ -19,7 +19,9 @@ elif command -v dnf >/dev/null 2>&1; then
   run_pkg_cmd dnf -y install \
     git zip unzip python3-pip autoconf libtool pkgconf-pkg-config patch \
     zlib-devel ncurses-devel libffi-devel openssl-devel
-  if dnf -q list available java-21-openjdk-devel >/dev/null 2>&1; then
+  if dnf -q list available java-17-openjdk-devel >/dev/null 2>&1; then
+    run_pkg_cmd dnf -y install java-17-openjdk-devel
+  elif dnf -q list available java-21-openjdk-devel >/dev/null 2>&1; then
     run_pkg_cmd dnf -y install java-21-openjdk-devel
   elif dnf -q list available java-25-openjdk-devel >/dev/null 2>&1; then
     run_pkg_cmd dnf -y install java-25-openjdk-devel
