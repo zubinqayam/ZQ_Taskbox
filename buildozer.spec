@@ -3,7 +3,8 @@ title = INNM Taskbox
 package.name = innmtaskbox
 package.domain = org.zqailogic
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,json,xlsx
+# Only include file extensions needed at runtime; xlsx excluded (no p4a recipe)
+source.include_exts = py,png,jpg,kv,atlas,json
 version = 2.0.0
 
 # Only include packages that have p4a recipes.
@@ -26,8 +27,8 @@ android.accept_sdk_license = True
 
 android.permissions = INTERNET, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
 
-# Use latest stable p4a to avoid NDK r25b incompatibilities
-p4a.branch = master
+# Pin to a stable p4a release tag to avoid NDK r25b incompatibilities with master
+p4a.branch = stable
 
 [buildozer]
 log_level = 2
