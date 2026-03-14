@@ -44,7 +44,7 @@ jobs:
           path: dist/INNM_Taskbox.exe
 
   build-apk:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
       - name: Checkout
