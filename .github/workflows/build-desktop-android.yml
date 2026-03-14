@@ -104,6 +104,3 @@ jobs:
         with:
           name: INNM_Taskbox_apk
           path: bin/*.apk
-
-          name: INNM_Taskbox_apk
-          path: bin/*.apk
