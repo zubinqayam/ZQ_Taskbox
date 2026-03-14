@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - feature/feedback-chat-drawer
+      - blackboxai/setup-venv-kivy
 
 jobs:
   build-exe:
