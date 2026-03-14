@@ -49,14 +49,28 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
+          # python-for-android requires Python 3.10 or 3.11; 3.11 is stable with p4a
           python-version: "3.11"
 
       - name: Install Java and Buildozer system deps
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk autoconf libtool pkg-config \
-            zlib1g-dev libncurses-dev libffi-dev libssl-dev
+            git zip unzip openjdk-17-jdk \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses-dev libffi-dev libssl-dev \
+            cmake build-essential libltdl-dev \
+            libsqlite3-dev libbz2-dev \
+            python3-dev python3-pip \
+            ccache
+
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v4
+        with:
+          path: ~/.buildozer
+          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-${{ runner.os }}-
 
       - name: Install Buildozer
         run: |
