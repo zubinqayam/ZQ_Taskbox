@@ -17,8 +17,16 @@ if command -v apt-get >/dev/null 2>&1; then
     zlib1g-dev libncurses-dev libffi-dev libssl-dev
 elif command -v dnf >/dev/null 2>&1; then
   run_pkg_cmd dnf -y install \
-    git zip unzip java-17-openjdk-devel python3-pip autoconf libtool pkgconf-pkg-config \
+    git zip unzip python3-pip autoconf libtool pkgconf-pkg-config \
     zlib-devel ncurses-devel libffi-devel openssl-devel
+  if dnf -q list available java-21-openjdk-devel >/dev/null 2>&1; then
+    run_pkg_cmd dnf -y install java-21-openjdk-devel
+  elif dnf -q list available java-25-openjdk-devel >/dev/null 2>&1; then
+    run_pkg_cmd dnf -y install java-25-openjdk-devel
+  else
+    echo "No supported OpenJDK devel package found (need Java 17+)."
+    exit 1
+  fi
 else
   echo "Unsupported package manager. Install dependencies manually."
   exit 1
