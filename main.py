@@ -22,6 +22,11 @@ import uuid
 import threading
 from pathlib import Path
 from datetime import datetime
+import os
+
+# Use ANGLE (DirectX) backend when available to avoid Windows GDI Generic OpenGL 1.1
+# Must be set before importing Kivy modules so the selected backend is used at import time.
+os.environ.setdefault("KIVY_GL_BACKEND", "angle_sdl2")
 
 from kivy.app import App
 from kivy.lang import Builder
