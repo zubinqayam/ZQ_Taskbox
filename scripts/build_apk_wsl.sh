@@ -41,7 +41,6 @@ download_with_retry_mirror() {
       else
         echo "✗ SHA256 mismatch for download from $current_url"
         rm -f "$dest.tmp" "$dest"
-        continue
       fi
     fi
     rm -f "$dest.tmp"
