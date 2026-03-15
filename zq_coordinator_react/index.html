@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZQ_COORDINATOR BRIDGE v2.10</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "system-ui", "sans-serif"],
+              mono: ['"JetBrains Mono"', "monospace"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #232632;
+        border-radius: 10px;
+      }
+      .scrollbar-custom::-webkit-scrollbar {
+        width: 4px;
+      }
+      .scrollbar-custom::-webkit-scrollbar-thumb {
+        background: rgba(127, 79, 255, 0.1);
+        border-radius: 10px;
+      }
+      @keyframes fade-in {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .animate-in {
+        animation: fade-in 0.4s ease-out forwards;
+      }
+    </style>
+  </head>
+  <body class="bg-[#181a20] text-[#e8eaf6]">
+    <div id="root"></div>
+    <script type="module">
+      ${the provided React code needs to be inserted here as a string, but since it's large, create the file with full code}
+    </script>
+  </body>
+</html>
