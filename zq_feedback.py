@@ -23,7 +23,6 @@ Usage (one-time setup in PowerShell before running app):
   python main.py
 """
 import os
-import json
 from typing import Optional
 from datetime import datetime
 
@@ -154,7 +153,7 @@ class ZQFeedbackNote:
         """Build a rich Markdown body for the GitHub Issue."""
         lines = [
             "## ZQ Feedback Session",
-            f"**App:** INNM Taskbox v2.0.0",
+            "**App:** INNM Taskbox v2.0.0",
             f"**Submitted:** {datetime.now().strftime('%Y-%m-%d %H:%M')} (Sohar, OM)",
             "",
             "### Entries",
