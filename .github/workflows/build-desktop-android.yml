@@ -10,7 +10,7 @@ on:
 jobs:
   build-exe:
     runs-on: windows-latest
-    timeout-minutes: 120
+    timeout-minutes: 240
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -28,7 +28,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-kivy311-
 
+      - name: Cache PyInstaller dist output
+        id: cache-pyinstaller-dist
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+        with:
+          path: dist\INNM_Taskbox
+          key: ${{ runner.os }}-pyinstaller-dist-${{ hashFiles('**/*.py', 'ui.kv', 'requirements.txt') }}
+
       - name: Install dependencies
+        if: steps.cache-pyinstaller-dist.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           python -m pip install --upgrade pip
@@ -36,17 +44,24 @@ jobs:
           python -m pip install pandas openpyxl requests "pyinstaller>=6.0"
 
       - name: Generate PyInstaller spec
+        if: steps.cache-pyinstaller-dist.outputs.cache-hit != 'true'
         shell: pwsh
         run: python make_spec.py
 
       - name: Build EXE (onedir via spec)
+        if: steps.cache-pyinstaller-dist.outputs.cache-hit != 'true'
         shell: pwsh
         env:
           KIVY_NO_CONSOLELOG: "1"
           KIVY_NO_ENV_CONFIG: "1"
+        run: python -m PyInstaller --noconfirm --clean INNM_Taskbox.spec
+
+      - name: Zip EXE output
+        shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean INNM_Taskbox.spec
-          Compress-Archive -Path dist\INNM_Taskbox -DestinationPath dist\INNM_Taskbox_win.zip
+          if (-not (Test-Path dist\INNM_Taskbox_win.zip)) {
+            Compress-Archive -Path dist\INNM_Taskbox -DestinationPath dist\INNM_Taskbox_win.zip
+          }
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
