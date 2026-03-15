@@ -30,13 +30,16 @@ download_with_retry_mirror() {
     fi
 
     if curl --fail --location --retry 3 --retry-delay 2 -o "$dest.tmp" "$current_url" 2>/dev/null; then
-      mv "$dest.tmp" "$dest"
-      if [[ -n "$sha256" ]] && echo "$sha256  $dest" | sha256sum --check - >/dev/null 2>&1; then
-        echo "✓ SHA256 verified: $dest"
-        return 0
-      elif [[ -z "$sha256" ]]; then
+      if [[ -z "$sha256" ]]; then
+        mv "$dest.tmp" "$dest"
         echo "✓ Downloaded: $dest (no checksum)"
         return 0
+      elif echo "$sha256  $dest.tmp" | sha256sum --check - >/dev/null 2>&1; then
+        mv "$dest.tmp" "$dest"
+        echo "✓ SHA256 verified: $dest"
+        return 0
+      else
+        echo "✗ SHA256 mismatch for download from $current_url"
       fi
     fi
     rm -f "$dest.tmp"
