@@ -1,20 +1,18 @@
 """
-make_spec.py — Generates INNM_Taskbox.spec for PyInstaller on Windows CI.
+make_spec.py — Generates INNM_Taskbox.spec for PyInstaller >=6 on Windows CI.
 Run: python make_spec.py
 """
-from kivy_deps import sdl2, glew
 from pathlib import Path
 
 spec_content = """\
 # -*- mode: python ; coding: utf-8 -*-
+# PyInstaller 6.x compatible spec (no cipher/block_cipher/win_no_prefer_redirects)
 from kivy_deps import sdl2, glew
-
-block_cipher = None
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[*sdl2.dep_bins, *glew.dep_bins],
+    binaries=[],
     datas=[('ui.kv', '.')],
     hiddenimports=[
         'kivy.core.window.window_sdl2',
@@ -34,13 +32,9 @@ a = Analysis(
     ],
     hookspath=[],
     excludes=['tkinter', 'matplotlib', 'scipy', '_pytest', 'unittest'],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure)
 
 exe = EXE(
     pyz,
@@ -49,15 +43,9 @@ exe = EXE(
     exclude_binaries=True,
     name='INNM_Taskbox',
     debug=False,
-    bootloader_ignore_signals=False,
     strip=False,
     upx=False,
     console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
 )
 
 coll = COLLECT(
@@ -68,7 +56,6 @@ coll = COLLECT(
     *[Tree(p) for p in sdl2.dep_bins + glew.dep_bins],
     strip=False,
     upx=False,
-    upx_exclude=[],
     name='INNM_Taskbox',
 )
 """
