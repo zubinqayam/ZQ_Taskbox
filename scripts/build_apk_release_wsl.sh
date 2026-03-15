@@ -40,6 +40,8 @@ download_with_retry_mirror() {
         return 0
       else
         echo "✗ SHA256 mismatch for download from $current_url"
+        rm -f "$dest.tmp" "$dest"
+        continue
       fi
     fi
     rm -f "$dest.tmp"
@@ -54,6 +56,8 @@ prefetch_sdl_deps() {
   local platform_dir="$HOME/.buildozer/android/platform/android-$api"
   mkdir -p "$platform_dir"/patches/{SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,python3}
 
+  # SHA256 hashes are not pinned here; pass a 64-char hex string as the 3rd
+  # argument to enable verification once you have the official release checksums.
   download_with_retry_mirror \
     "https://github.com/libsdl-org/SDL/archive/refs/tags/release-2.30.8.tar.gz" \
     "$platform_dir/patches/SDL2/SDL-release-2.30.8.tar.gz" \
@@ -82,7 +86,7 @@ prefetch_sdl_deps() {
   echo "✓ SDL deps pre-fetched (full set). Buildozer will use these."
 }
 
-echo "[1/6] Installing system packages for Buildozer"
+echo "[1/7] Installing system packages for Buildozer"
 if command -v apt-get >/dev/null 2>&1; then
   run_pkg_cmd apt-get update
   run_pkg_cmd apt-get install -y \
@@ -107,15 +111,15 @@ else
   exit 1
 fi
 
-echo "[2/6] Installing Buildozer"
+echo "[2/7] Installing Buildozer"
 python3 -m pip install --upgrade pip
 python3 -m pip install --upgrade setuptools wheel
 python3 -m pip install cython==0.29.33 buildozer
 
-echo "[3/6] Pre-fetching SDL deps with retry/mirrors"
+echo "[3/7] Pre-fetching SDL deps with retry/mirrors"
 prefetch_sdl_deps
 
-echo "[4/6] Checking keystore"
+echo "[4/7] Checking keystore"
 
 KEYSTORE_PATH="${APK_KEYSTORE_PATH:-.secrets/innm-upload.jks}"
 KEY_ALIAS="${APK_KEY_ALIAS:-innmupload}"
@@ -132,10 +136,10 @@ if [[ -z "${APK_KEYSTORE_PASSWORD:-}" || -z "${APK_KEY_PASSWORD:-}" ]]; then
   exit 1
 fi
 
-echo "[4/6] Building Android APK (release unsigned)"
+echo "[5/7] Building Android APK (release unsigned)"
 buildozer android release
 
-echo "[5/6] Locating Android build tools"
+echo "[6/7] Locating Android build tools"
 BUILD_TOOLS_DIR=$(find "$HOME/.buildozer/android/platform/android-sdk/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
 if [[ -z "${BUILD_TOOLS_DIR:-}" ]]; then
   echo "Android build-tools not found"
@@ -148,7 +152,7 @@ UNSIGNED_APK=$(ls -t bin/*-release-unsigned.apk | head -n 1)
 ALIGNED_APK="${UNSIGNED_APK%-unsigned.apk}-aligned.apk"
 SIGNED_APK="${UNSIGNED_APK%-unsigned.apk}-signed.apk"
 
-echo "[6/6] Aligning and signing APK"
+echo "[7/7] Aligning and signing APK"
 "$ZIPALIGN" -f 4 "$UNSIGNED_APK" "$ALIGNED_APK"
 "$APKSIGNER" sign \
   --ks "$KEYSTORE_PATH" \
@@ -160,5 +164,5 @@ echo "[6/6] Aligning and signing APK"
 
 "$APKSIGNER" verify --verbose "$SIGNED_APK"
 
-echo "[6/6] Signed APK ready"
+echo "✓ Signed APK ready"
 ls -lh "$SIGNED_APK"
