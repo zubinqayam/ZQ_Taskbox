@@ -23,6 +23,7 @@ secure.json
 # — Build output —————————————————————————
 dist/
 build/
+INNM_Taskbox.spec
 *.spec.bak
 .buildozer/
 
