@@ -6,6 +6,12 @@ on:
     branches:
       - main
       - feature/feedback-chat-drawer
+    paths:
+      - '**/*.py'
+      - 'ui.kv'
+      - 'requirements.txt'
+      - 'buildozer.spec'
+      - '.github/workflows/build-desktop-android.yml'
 
 jobs:
   build-exe:
