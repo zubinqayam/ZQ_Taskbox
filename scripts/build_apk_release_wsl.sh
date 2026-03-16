@@ -40,10 +40,13 @@ download_with_retry_mirror() {
         return 0
       else
         echo "✗ SHA256 mismatch for download from $current_url"
-        rm -f "$dest.tmp" "$dest"
+        rm -f -- "$dest.tmp"
+        if [ -n "$dest" ]; then
+          rm -f -- "$dest"
+        fi
       fi
     fi
-    rm -f "$dest.tmp"
+    rm -f -- "$dest.tmp"
     sleep $((retry_delay * attempt))
   done
   echo "✗ Failed: $url and mirrors"
