@@ -9,6 +9,7 @@ _HERE = Path(__file__).parent.resolve()
 spec_content = f"""\
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller 6.x compatible spec (no cipher/block_cipher/win_no_prefer_redirects)
+from PyInstaller.building.datastruct import Tree
 from kivy_deps import sdl2, glew
 from pathlib import Path
 
