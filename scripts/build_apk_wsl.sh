@@ -40,9 +40,13 @@ download_with_retry_mirror() {
         return 0
       else
         echo "✗ SHA256 mismatch for download from $current_url"
+        rm -f -- "$dest.tmp"
+        if [ -n "${dest:-}" ]; then
+          rm -f -- "$dest"
+        fi
       fi
     fi
-    rm -f "$dest.tmp"
+    rm -f -- "$dest.tmp"
     sleep $((retry_delay * attempt))
   done
   echo "✗ Failed: $url and mirrors"
@@ -54,6 +58,8 @@ prefetch_sdl_deps() {
   local platform_dir="$HOME/.buildozer/android/platform/android-$api"
   mkdir -p "$platform_dir"/patches/{SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,python3}
 
+  # SHA256 hashes are not pinned here; pass a 64-char hex string as the 3rd
+  # argument to enable verification once you have the official release checksums.
   download_with_retry_mirror \
     "https://github.com/libsdl-org/SDL/archive/refs/tags/release-2.30.8.tar.gz" \
     "$platform_dir/patches/SDL2/SDL-release-2.30.8.tar.gz" \
@@ -82,7 +88,7 @@ prefetch_sdl_deps() {
   echo "✓ SDL deps pre-fetched (full set). Buildozer will use these."
 }
 
-echo "[1/4] Installing system packages for Buildozer"
+echo "[1/5] Installing system packages for Buildozer"
 if command -v apt-get >/dev/null 2>&1; then
   run_pkg_cmd apt-get update
   run_pkg_cmd apt-get install -y \
@@ -111,15 +117,15 @@ else
   exit 1
 fi
 
-echo "[2/4] Installing Buildozer"
+echo "[2/5] Installing Buildozer"
 python3 -m pip install --upgrade pip
 python3 -m pip install --upgrade setuptools wheel
 python3 -m pip install cython==0.29.33 buildozer
 
-echo "[3/4] Pre-fetching SDL deps with retry/mirrors"
+echo "[3/5] Pre-fetching SDL deps with retry/mirrors"
 prefetch_sdl_deps
 
-echo "[4/4] Building Android APK (debug sideload)"
+echo "[4/5] Building Android APK (debug sideload)"
 echo y | buildozer android debug
 
 echo "[5/5] Output APK path"

@@ -27,7 +27,8 @@ android.accept_sdk_license = True
 
 android.permissions = INTERNET, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
 
-# Pin to a stable p4a release tag to avoid NDK r25b incompatibilities with master
+# Use the 'stable' p4a branch to track the latest stable release; replace with
+# an explicit tag (e.g. p4a.branch = v2023.09.16) to pin to a specific version
 p4a.branch = stable
 
 [buildozer]
