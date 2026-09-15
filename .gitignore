@@ -49,3 +49,5 @@ secrets.json
 # — Data / Excel files (optional — remove lines if you want to track) ——
 # *.xlsx
 # *.csv
+
+.fake
