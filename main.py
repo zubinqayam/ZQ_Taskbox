@@ -22,6 +22,12 @@ import uuid
 import threading
 from pathlib import Path
 from datetime import datetime
+import os
+import sys
+
+# Use ANGLE (DirectX) backend when available to avoid Windows GDI Generic OpenGL 1.1
+# Must be set before importing Kivy modules so the selected backend is used at import time.
+os.environ.setdefault("KIVY_GL_BACKEND", "angle_sdl2")
 
 from kivy.app import App
 from kivy.lang import Builder
@@ -38,7 +44,9 @@ from innm_controller import INNMController
 from zq_feedback import ZQFeedbackNote
 
 # ---- Resolve paths relative to THIS file, not the working directory ----
-_BASE_DIR = Path(__file__).parent.resolve()
+# When frozen by PyInstaller the data files live in sys._MEIPASS (_internal/).
+# In dev mode they sit next to main.py.
+_BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).parent)).resolve()
 _KV_FILE  = str(_BASE_DIR / "ui.kv")
 
 

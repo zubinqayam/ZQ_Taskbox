@@ -1,214 +1,524 @@
 # Copyright © 2026 ZQ AI LOGIC™ — Apache License 2.0
+# Dark modern redesign — ZQ UI v2
 
 #:import dp kivy.metrics.dp
 #:import DragBehavior kivy.uix.behaviors.drag.DragBehavior
 
+# ── Colour constants (referenced as rgba tuples inline) ───────────────────────
+# BG_DEEP   : 0.051, 0.067, 0.086, 1   (#0D1117)
+# BG_PANEL  : 0.086, 0.106, 0.133, 1   (#161B22)
+# BG_INPUT  : 0.129, 0.161, 0.200, 1   (#212830)
+# BG_HEADER : 0.063, 0.078, 0.098, 1   (#101419)
+# BG_CARD   : 0.098, 0.122, 0.153, 1   (#191F27)
+# ACCENT    : 0.220, 0.529, 1.000, 1   (#3887FF - blue)
+# GREEN     : 0.184, 0.635, 0.298, 1   (#2FA14C)
+# RED       : 0.741, 0.161, 0.173, 1   (#BD292C)
+# MUTED     : 0.133, 0.153, 0.188, 1   (#222730)
+# TXT_PRI   : 0.902, 0.933, 0.961, 1   (#E6EDF5)
+# TXT_SEC   : 0.427, 0.467, 0.514, 1   (#6D7783)
+
+# ── Reusable rules ────────────────────────────────────────────────────────────
+
 <ZQBubble@DragBehavior+Button>:
     size_hint: None, None
-    size: dp(56), dp(56)
+    size: dp(52), dp(52)
     text: "ZQ"
     bold: True
-    background_color: 0.2, 0.6, 1, 1
+    font_size: "15sp"
+    color: 1, 1, 1, 1
+    background_normal: ""
+    background_down: ""
+    background_color: 0, 0, 0, 0
     on_release: app.toggle_zq_panel()
     drag_timeout: 999999
     drag_distance: 5
+    canvas.before:
+        Color:
+            rgba: 0.220, 0.529, 1.0, 1
+        Ellipse:
+            pos: self.pos
+            size: self.size
 
 <DragTemplate@DragBehavior+Button>:
     size_hint_y: None
-    height: dp(36)
+    height: dp(34)
+    bold: True
+    font_size: "12sp"
+    color: 0.220, 0.529, 1.0, 1
+    background_normal: ""
+    background_down: ""
+    background_color: 0, 0, 0, 0
     drag_timeout: 999999
     drag_distance: 5
+    canvas.before:
+        Color:
+            rgba: 0.098, 0.160, 0.259, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(7)]
 
 <DropWorkspace@BoxLayout>:
     on_touch_up:
         if self.collide_point(*args[1].pos): app.handle_drop(args[1])
 
+# ── Root ──────────────────────────────────────────────────────────────────────
+
 <RootUI@FloatLayout>:
+
+    # Deep background
+    canvas.before:
+        Color:
+            rgba: 0.051, 0.067, 0.086, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    # ── Header bar ────────────────────────────────────────────────────────────
     BoxLayout:
         orientation: "horizontal"
-        size_hint: 1, 1
-
-        DropWorkspace:
-            orientation: "vertical"
-            size_hint_x: 0.62
-            padding: dp(8)
-            spacing: dp(4)
-
-            Label:
-                text: "[b]INNM Master Chatbot[/b]"
-                markup: True
-                size_hint_y: None
-                height: dp(28)
-
-            TextInput:
-                id: chat_display
-                readonly: True
-                font_size: "13sp"
-
-            BoxLayout:
-                size_hint_y: None
-                height: dp(44)
-                spacing: dp(4)
-
-                TextInput:
-                    id: chat_input
-                    hint_text: "Type a message..."
-                    multiline: False
-                    on_text_validate: app.send_message(self.text); self.text = ""
-
-                Button:
-                    text: "Send"
-                    size_hint_x: None
-                    width: dp(70)
-                    on_release: app.send_message(chat_input.text); chat_input.text = ""
-
-        BoxLayout:
-            orientation: "vertical"
-            size_hint_x: 0.38
-            padding: dp(6)
-            spacing: dp(6)
-
-            Label:
-                text: "[b]Tools[/b]"
-                markup: True
-                size_hint_y: None
-                height: dp(28)
-
-            BoxLayout:
-                size_hint_y: None
-                height: dp(36)
-                spacing: dp(4)
-                DragTemplate:
-                    text: "New Folder"
-                    template_type: "folder"
-                DragTemplate:
-                    text: "New Taskbox"
-                    template_type: "taskbox"
-
-            BoxLayout:
-                size_hint_y: None
-                height: dp(40)
-                spacing: dp(4)
-                TextInput:
-                    id: new_folder_name
-                    hint_text: "Folder name"
-                    multiline: False
-                Button:
-                    text: "Add"
-                    size_hint_x: None
-                    width: dp(60)
-                    on_release:
-                        app.add_folder(new_folder_name.text)
-                        new_folder_name.text = ""
-
-            BoxLayout:
-                size_hint_y: None
-                height: dp(40)
-                spacing: dp(4)
-                TextInput:
-                    id: new_taskbox_name
-                    hint_text: "Taskbox name"
-                    multiline: False
-                Button:
-                    text: "Add"
-                    size_hint_x: None
-                    width: dp(60)
-                    on_release:
-                        app.add_taskbox(new_taskbox_name.text)
-                        new_taskbox_name.text = ""
-
-            Label:
-                text: "Folders"
-                size_hint_y: None
-                height: dp(22)
-            ScrollView:
-                size_hint_y: 0.2
-                GridLayout:
-                    id: folder_list
-                    cols: 1
-                    size_hint_y: None
-                    height: self.minimum_height
-                    row_default_height: dp(34)
-                    spacing: dp(3)
-
-            Label:
-                text: "Taskboxes"
-                size_hint_y: None
-                height: dp(22)
-            ScrollView:
-                size_hint_y: 0.2
-                GridLayout:
-                    id: taskbox_list
-                    cols: 1
-                    size_hint_y: None
-                    height: self.minimum_height
-                    row_default_height: dp(34)
-                    spacing: dp(3)
-
-            Button:
-                text: "Settings"
-                size_hint_y: None
-                height: dp(38)
-                on_release: app.open_settings_screen()
-
-            Button:
-                text: "Profile"
-                size_hint_y: None
-                height: dp(38)
-                on_release: app.open_profile_screen()
-
-    ZQBubble:
-        id: zq_bubble
-        pos_hint: {"right": 0.98, "y": 0.05}
-
-    BoxLayout:
-        id: zq_panel
-        orientation: "vertical"
-        size_hint: 0.33, 0.55
-        pos_hint: {"x": 0.01, "y": 0.02}
-        padding: dp(6)
-        spacing: dp(4)
-        opacity: 0
-        disabled: True
+        size_hint: 1, None
+        height: dp(50)
+        pos_hint: {"top": 1}
+        padding: [dp(16), 0, dp(16), 0]
+        spacing: dp(8)
         canvas.before:
             Color:
-                rgba: 0.08, 0.08, 0.15, 0.92
+                rgba: 0.063, 0.078, 0.098, 1
             Rectangle:
                 pos: self.pos
                 size: self.size
 
         Label:
+            text: "[b]INNM Taskbox[/b]"
+            markup: True
+            font_size: "17sp"
+            color: 0.902, 0.933, 0.961, 1
+            halign: "left"
+            valign: "middle"
+            text_size: self.size
+
+        Label:
+            text: "ZQ AI LOGIC™  v2"
+            font_size: "11sp"
+            color: 0.427, 0.467, 0.514, 1
+            size_hint_x: None
+            width: dp(130)
+            halign: "right"
+            valign: "middle"
+            text_size: self.size
+
+    # ── Main two-column body ──────────────────────────────────────────────────
+    BoxLayout:
+        orientation: "horizontal"
+        size_hint: 1, 1
+        pos_hint: {"x": 0, "y": 0}
+        padding: [dp(10), dp(60), dp(10), dp(10)]
+        spacing: dp(10)
+
+        # ── LEFT: Chat (60%) ─────────────────────────────────────────────────
+        DropWorkspace:
+            orientation: "vertical"
+            size_hint_x: 0.60
+            spacing: dp(8)
+
+            # Chat display card
+            BoxLayout:
+                canvas.before:
+                    Color:
+                        rgba: 0.086, 0.106, 0.133, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(10)]
+                padding: [dp(2), dp(2)]
+                TextInput:
+                    id: chat_display
+                    readonly: True
+                    font_size: "13sp"
+                    background_color: 0, 0, 0, 0
+                    foreground_color: 0.902, 0.933, 0.961, 1
+                    cursor_color: 0.220, 0.529, 1.0, 1
+                    hint_text: "Chat will appear here…"
+                    hint_text_color: 0.427, 0.467, 0.514, 1
+                    padding: [dp(12), dp(10), dp(12), dp(10)]
+
+            # Input row
+            BoxLayout:
+                size_hint_y: None
+                height: dp(48)
+                spacing: dp(8)
+
+                BoxLayout:
+                    canvas.before:
+                        Color:
+                            rgba: 0.086, 0.106, 0.133, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(8)]
+                    padding: [dp(2), dp(2)]
+                    TextInput:
+                        id: chat_input
+                        hint_text: "Message INNM…"
+                        hint_text_color: 0.427, 0.467, 0.514, 1
+                        multiline: False
+                        background_color: 0, 0, 0, 0
+                        foreground_color: 0.902, 0.933, 0.961, 1
+                        cursor_color: 0.220, 0.529, 1.0, 1
+                        padding: [dp(10), dp(12)]
+                        on_text_validate:
+                            app.send_message(self.text)
+                            self.text = ""
+
+                Button:
+                    text: "Send"
+                    size_hint_x: None
+                    width: dp(80)
+                    bold: True
+                    font_size: "14sp"
+                    color: 1, 1, 1, 1
+                    background_normal: ""
+                    background_down: ""
+                    background_color: 0, 0, 0, 0
+                    on_release:
+                        app.send_message(chat_input.text)
+                        chat_input.text = ""
+                    canvas.before:
+                        Color:
+                            rgba: 0.220, 0.529, 1.0, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(8)]
+
+        # ── RIGHT: Tools (40%) ───────────────────────────────────────────────
+        BoxLayout:
+            orientation: "vertical"
+            size_hint_x: 0.40
+            spacing: dp(8)
+
+            # Drag template shortcuts
+            BoxLayout:
+                size_hint_y: None
+                height: dp(34)
+                spacing: dp(6)
+                DragTemplate:
+                    text: "+ Folder"
+                    template_type: "folder"
+                DragTemplate:
+                    text: "+ Taskbox"
+                    template_type: "taskbox"
+
+            # Add Folder row
+            BoxLayout:
+                size_hint_y: None
+                height: dp(42)
+                spacing: dp(6)
+                canvas.before:
+                    Color:
+                        rgba: 0.086, 0.106, 0.133, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(8)]
+                padding: [dp(4), dp(4)]
+                TextInput:
+                    id: new_folder_name
+                    hint_text: "Folder name…"
+                    hint_text_color: 0.427, 0.467, 0.514, 1
+                    multiline: False
+                    background_color: 0, 0, 0, 0
+                    foreground_color: 0.902, 0.933, 0.961, 1
+                    cursor_color: 0.220, 0.529, 1.0, 1
+                    padding: [dp(8), dp(8)]
+                Button:
+                    text: "＋"
+                    size_hint_x: None
+                    width: dp(44)
+                    bold: True
+                    font_size: "18sp"
+                    color: 1, 1, 1, 1
+                    background_normal: ""
+                    background_down: ""
+                    background_color: 0, 0, 0, 0
+                    on_release:
+                        app.add_folder(new_folder_name.text)
+                        new_folder_name.text = ""
+                    canvas.before:
+                        Color:
+                            rgba: 0.184, 0.635, 0.298, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(6)]
+
+            # Add Taskbox row
+            BoxLayout:
+                size_hint_y: None
+                height: dp(42)
+                spacing: dp(6)
+                canvas.before:
+                    Color:
+                        rgba: 0.086, 0.106, 0.133, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(8)]
+                padding: [dp(4), dp(4)]
+                TextInput:
+                    id: new_taskbox_name
+                    hint_text: "Taskbox name…"
+                    hint_text_color: 0.427, 0.467, 0.514, 1
+                    multiline: False
+                    background_color: 0, 0, 0, 0
+                    foreground_color: 0.902, 0.933, 0.961, 1
+                    cursor_color: 0.220, 0.529, 1.0, 1
+                    padding: [dp(8), dp(8)]
+                Button:
+                    text: "＋"
+                    size_hint_x: None
+                    width: dp(44)
+                    bold: True
+                    font_size: "18sp"
+                    color: 1, 1, 1, 1
+                    background_normal: ""
+                    background_down: ""
+                    background_color: 0, 0, 0, 0
+                    on_release:
+                        app.add_taskbox(new_taskbox_name.text)
+                        new_taskbox_name.text = ""
+                    canvas.before:
+                        Color:
+                            rgba: 0.184, 0.635, 0.298, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(6)]
+
+            # Folders section
+            Label:
+                text: "FOLDERS"
+                size_hint_y: None
+                height: dp(18)
+                font_size: "10sp"
+                bold: True
+                color: 0.427, 0.467, 0.514, 1
+                halign: "left"
+                text_size: self.size
+
+            ScrollView:
+                size_hint_y: 1
+                canvas.before:
+                    Color:
+                        rgba: 0.086, 0.106, 0.133, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(8)]
+                GridLayout:
+                    id: folder_list
+                    cols: 1
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(3)
+                    padding: [dp(4), dp(4)]
+
+            # Taskboxes section
+            Label:
+                text: "TASKBOXES"
+                size_hint_y: None
+                height: dp(18)
+                font_size: "10sp"
+                bold: True
+                color: 0.427, 0.467, 0.514, 1
+                halign: "left"
+                text_size: self.size
+
+            ScrollView:
+                size_hint_y: 1
+                canvas.before:
+                    Color:
+                        rgba: 0.086, 0.106, 0.133, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(8)]
+                GridLayout:
+                    id: taskbox_list
+                    cols: 1
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: dp(3)
+                    padding: [dp(4), dp(4)]
+
+            # Settings / Profile buttons
+            BoxLayout:
+                size_hint_y: None
+                height: dp(40)
+                spacing: dp(6)
+                Button:
+                    text: "⚙  Settings"
+                    bold: True
+                    font_size: "12sp"
+                    color: 0.902, 0.933, 0.961, 1
+                    background_normal: ""
+                    background_down: ""
+                    background_color: 0, 0, 0, 0
+                    on_release: app.open_settings_screen()
+                    canvas.before:
+                        Color:
+                            rgba: 0.133, 0.153, 0.188, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(8)]
+                Button:
+                    text: "👤  Profile"
+                    bold: True
+                    font_size: "12sp"
+                    color: 0.902, 0.933, 0.961, 1
+                    background_normal: ""
+                    background_down: ""
+                    background_color: 0, 0, 0, 0
+                    on_release: app.open_profile_screen()
+                    canvas.before:
+                        Color:
+                            rgba: 0.133, 0.153, 0.188, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [dp(8)]
+
+    # ── ZQ Floating Bubble ────────────────────────────────────────────────────
+    ZQBubble:
+        id: zq_bubble
+        pos_hint: {"right": 0.98, "y": 0.04}
+
+    # ── ZQ Feedback Overlay ──────────────────────────────────────────────────
+    BoxLayout:
+        id: zq_panel
+        orientation: "vertical"
+        size_hint: 0.36, 0.52
+        pos_hint: {"x": 0.01, "y": 0.06}
+        padding: dp(14)
+        spacing: dp(8)
+        opacity: 0
+        disabled: True
+        canvas.before:
+            Color:
+                rgba: 0.063, 0.078, 0.098, 0.97
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [dp(12)]
+
+        Label:
             text: "[b]ZQ Feedback Note[/b]"
             markup: True
             size_hint_y: None
-            height: dp(26)
+            height: dp(30)
+            font_size: "14sp"
+            color: 0.902, 0.933, 0.961, 1
+            halign: "left"
+            text_size: self.size
 
-        TextInput:
-            id: zq_history_display
-            readonly: True
-            font_size: "12sp"
-
-        TextInput:
-            id: zq_input
-            hint_text: "+ves / -ves / complaints..."
-            size_hint_y: None
-            height: dp(60)
-            multiline: False
+        BoxLayout:
+            canvas.before:
+                Color:
+                    rgba: 0.086, 0.106, 0.133, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(8)]
+            padding: [dp(2), dp(2)]
+            TextInput:
+                id: zq_history_display
+                readonly: True
+                font_size: "12sp"
+                background_color: 0, 0, 0, 0
+                foreground_color: 0.902, 0.933, 0.961, 1
+                hint_text: "No feedback yet…"
+                hint_text_color: 0.427, 0.467, 0.514, 1
+                padding: [dp(10), dp(8)]
 
         BoxLayout:
             size_hint_y: None
-            height: dp(38)
-            spacing: dp(4)
+            height: dp(44)
+            canvas.before:
+                Color:
+                    rgba: 0.086, 0.106, 0.133, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(8)]
+            padding: [dp(4), dp(4)]
+            TextInput:
+                id: zq_input
+                hint_text: "+ves / -ves / complaints…"
+                hint_text_color: 0.427, 0.467, 0.514, 1
+                multiline: False
+                background_color: 0, 0, 0, 0
+                foreground_color: 0.902, 0.933, 0.961, 1
+                cursor_color: 0.220, 0.529, 1.0, 1
+                padding: [dp(10), dp(10)]
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            spacing: dp(6)
+
             Button:
                 text: "Add"
+                bold: True
+                font_size: "13sp"
+                color: 1, 1, 1, 1
+                background_normal: ""
+                background_down: ""
+                background_color: 0, 0, 0, 0
                 on_release:
                     app.add_zq_feedback(zq_input.text)
                     zq_input.text = ""
+                canvas.before:
+                    Color:
+                        rgba: 0.184, 0.635, 0.298, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(6)]
+
             Button:
-                text: "Send to GitHub"
+                text: "→ GitHub"
+                bold: True
+                font_size: "13sp"
+                color: 1, 1, 1, 1
+                background_normal: ""
+                background_down: ""
+                background_color: 0, 0, 0, 0
                 on_release: app.send_zq_to_github()
+                canvas.before:
+                    Color:
+                        rgba: 0.220, 0.529, 1.0, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(6)]
+
             Button:
-                text: "Close"
+                text: "✕ Close"
+                bold: True
+                font_size: "13sp"
+                color: 1, 1, 1, 1
+                background_normal: ""
+                background_down: ""
+                background_color: 0, 0, 0, 0
                 on_release: app.toggle_zq_panel()
+                canvas.before:
+                    Color:
+                        rgba: 0.741, 0.161, 0.173, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(6)]
 
 RootUI:

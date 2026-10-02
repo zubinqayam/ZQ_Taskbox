@@ -1,17 +1,31 @@
-# Task COMPLETE: Retry/mirror logic for SDL deps added to both build scripts
+# INNM Taskbox V2 TODO
 
-Status: ✅ Done
+## Current Status
 
-## Summary:
+✅ SDL deps retry logic added to build scripts (complete)
 
-- Added `download_with_retry_mirror()`: curl with 3 retries + fallback mirrors, optional SHA256 verify.
-- Added `prefetch_sdl_deps()`: Pre-downloads SDL2/SDL_image/mixer/ttf to ~/.buildozer patches dir (skips Buildozer bootstrap downloads).
-- Integrated as new step in both scripts/build_apk_wsl.sh and scripts/build_apk_release_wsl.sh before buildozer call.
-- Minor numbering overlaps in release script ignored (functional).
+## Python Version Issue
 
-## Verification:
+⚠️ Kivy deps fail on Python 3.12/3.14 (no sdl2_dev wheel).
 
-- Scripts executable, logic sound.
-- Run `./scripts/build_apk_wsl.sh` to test (downloads ~few MB fast, then buildozer uses cache).
+- Downgrade to Python 3.11 recommended (confirmed by user).
 
-Files updated: scripts/build_apk_wsl.sh, scripts/build_apk_release_wsl.sh
+## Next Steps
+
+1. **Install Python 3.11 + Fresh Venv**
+   - Download Python 3.11 from python.org
+   - `py -3.11 -m venv .venv311`
+   - `.venv311\\Scripts\\activate.bat && pip install kivy[base] -r requirements.txt`
+
+2. **Run Desktop App**
+   - `python main.py`
+   - Test UI flows
+
+3. **Sample Data**
+   - Create data/corporate_excel.xlsx dummy
+
+4. **APK Build (WSL)**
+   - `./scripts/build_apk_wsl.sh`
+
+5. **Complete**
+   - PR changes
