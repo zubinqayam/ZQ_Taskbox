@@ -4,19 +4,17 @@ Run: python make_spec.py
 """
 from pathlib import Path
 
-_HERE = Path(__file__).parent.resolve()
-
-spec_content = f"""\
+spec_content = """\
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller 6.x compatible spec (no cipher/block_cipher/win_no_prefer_redirects)
+from PyInstaller.building.datastruct import Tree
 from kivy_deps import sdl2, glew
-from pathlib import Path
 
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[(r'{_HERE / "ui.kv"}', '.')],
+    datas=[('ui.kv', '.')],
     hiddenimports=[
         'kivy.core.window.window_sdl2',
         'kivy.core.audio.audio_sdl2',
