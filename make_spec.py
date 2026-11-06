@@ -7,6 +7,7 @@ from pathlib import Path
 spec_content = """\
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller 6.x compatible spec (no cipher/block_cipher/win_no_prefer_redirects)
+from PyInstaller.building.datastruct import Tree
 from kivy_deps import sdl2, glew
 
 a = Analysis(
